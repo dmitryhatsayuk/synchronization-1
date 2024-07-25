@@ -10,18 +10,32 @@ import java.util.concurrent.Executors;
 public class Main {
     public static int routesCount = 1000;
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
-    public static Runnable logic = () -> {
-        String string = generateRoute("RLRFR", 100);
-        counter(string);
+    public static Runnable logic = () -> counter(generateRoute("RLRFR", 100));
+    public static Runnable maximizator = () -> {
+        try {
+           sizeToFreq .wait();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        while (!Thread.interrupted()) {
+            maxMapPrinter(sizeToFreq);
+        }
     };
 
     public static void main(String[] args) {
-
+        Thread thready = new Thread(maximizator);
+        thready.start();
         try (ExecutorService threadPool = Executors.newFixedThreadPool(routesCount)) {
             for (int i = 0; i < routesCount; i++) {
+
                 threadPool.submit(logic);
+
+
             }
+
             threadPool.shutdown();
+            thready.interrupt();
         }
         mapPrinter(sizeToFreq);
     }
@@ -61,6 +75,7 @@ public class Main {
 
 
         }
+        sizeToFreq.notify();
     }
 
     public static void mapPrinter(Map<Integer, Integer> map) {
@@ -72,6 +87,11 @@ public class Main {
         for (var entry : map.entrySet()) {
             System.out.println("-" + entry.getValue() + " (" + entry.getKey() + " раз)");
         }
+    }
+
+    public static void maxMapPrinter(Map<Integer, Integer> map) {
+        Optional<Map.Entry<Integer, Integer>> maxEntry = map.entrySet().stream().max(Map.Entry.comparingByValue());
+        System.out.println("Текущее самое частое количество повторений " + maxEntry.get().getValue() + " (встретилось " + maxEntry.get().getKey() + " раз)");
     }
 }
 
