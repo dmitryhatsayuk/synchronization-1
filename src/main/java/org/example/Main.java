@@ -13,7 +13,9 @@ public class Main {
     public static Runnable logic = () -> counter(generateRoute("RLRFR", 100));
     public static Runnable maximizator = () -> {
         try {
-           sizeToFreq .wait();
+            synchronized (sizeToFreq) {
+                sizeToFreq.wait();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -24,13 +26,12 @@ public class Main {
     };
 
     public static void main(String[] args) {
-        Thread thready = new Thread(maximizator);
+        Thread thready = new Thread(maximizator, "Jango");
         thready.start();
         try (ExecutorService threadPool = Executors.newFixedThreadPool(routesCount)) {
             for (int i = 0; i < routesCount; i++) {
 
                 threadPool.submit(logic);
-
 
             }
 
@@ -75,7 +76,9 @@ public class Main {
 
 
         }
-        sizeToFreq.notify();
+        synchronized (sizeToFreq) {
+            sizeToFreq.notify();
+        }
     }
 
     public static void mapPrinter(Map<Integer, Integer> map) {
